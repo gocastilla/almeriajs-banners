@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import BodyParser from 'body-parser';
 import puppeteer from 'puppeteer';
+import { stringify } from 'query-string';
 import path from 'path';
 import ejs from 'ejs';
 
@@ -15,28 +16,9 @@ app.get('/template', (req: Request, res: Response) =>
 );
 
 app.get('/template/index.html', async (req: Request, res: Response) => {
-  const data = {
-    date: 'Jueves, 19 de Septiembre de 2019',
-    talks: [
-      {
-        title: 'Asdasdasd',
-        avatar: 'https://i.imgur.com/Sm7xEPo.png',
-        speaker: 'Alberto Gómez',
-        twitter: '@gocastilla',
-        rank: 'Front-end developer en Coderty'
-      },
-      {
-        title: 'Asdasdasd',
-        avatar: 'https://i.imgur.com/Sm7xEPo.png',
-        speaker: 'José Manuel García Giménez',
-        twitter: '@josefdsa',
-        rank: 'Cloud Data engineer en Elastacloud'
-      }
-    ]
-  };
   ejs.renderFile(
     path.resolve(__dirname, '../template/index.html'),
-    data,
+    req.body.data || {},
     {},
     (error, html) => {
       if (error) {
@@ -50,11 +32,18 @@ app.get('/template/index.html', async (req: Request, res: Response) => {
 
 app.use('/template', express.static(path.resolve(__dirname, '../template')));
 
-app.get('/banner-png', async (req: Request, res: Response) => {
+app.get('/banner', async (req: Request, res: Response) => {
   try {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 675 });
+    await page.setViewport({ width: 1200, height: 675, deviceScaleFactor: 2 });
+    await page.setRequestInterception(true);
+    page.on('request', interceptedRequest => {
+      interceptedRequest.continue({
+        method: 'POST',
+        postData: stringify(req.body.data || {})
+      });
+    });
     await page.goto(`http://localhost:${PORT}/template/index.html`, {
       waitUntil: 'networkidle0'
     });

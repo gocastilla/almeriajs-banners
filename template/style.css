@@ -55,7 +55,7 @@ body {
 }
 
 #talks .talk {
-  padding: 10px 0 20px;
+  padding: 10px 0;
   display: flex;
   justify-content: flex-start;
   flex-direction: row;
@@ -103,6 +103,17 @@ body {
 #speakers .speaker .name {
   font-family: 'Neutra Text Bold';
   padding-top: 20px;
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+#speakers .speaker .twitter {
+  margin-bottom: 10px;
+  color: #0276b8;
+  font-size: 22px;
+}
+#speakers .speaker .rank {
+  font-size: 22px;
 }
 
 footer {
