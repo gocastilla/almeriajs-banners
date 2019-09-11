@@ -1,12 +1,11 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import BodyParser from 'body-parser';
 import cors from 'cors';
 import puppeteer from 'puppeteer';
-import { stringify } from 'query-string';
 import path from 'path';
 import ejs from 'ejs';
 
-const PORT = 4321;
+const PORT = 4444;
 const app = express();
 app.use(cors());
 app.use(BodyParser.json());
@@ -20,18 +19,14 @@ app.use('/', express.static(path.resolve(__dirname, '../form')));
 
 function renderTemplatoIndex(data: any): Promise<string | unknown> {
   return new Promise((resolve, reject) => {
-    ejs.renderFile(
-      path.resolve(__dirname, '../template/index.html'),
-      data,
-      {},
-      (error, html) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(html);
-        }
+    const index = path.resolve(__dirname, '../template/index.html');
+    ejs.renderFile(index, data, {}, (error, html) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(html);
       }
-    );
+    });
   });
 }
 
@@ -59,10 +54,9 @@ function generateBanner(data = {}): Promise<Buffer> {
         height: 675,
         deviceScaleFactor: 2
       });
+      const _data = encodeURI(JSON.stringify(data));
       await page.goto(
-        `http://localhost:${PORT}/template/index.html?data=${encodeURI(
-          JSON.stringify(data)
-        )}`,
+        `http://localhost:${PORT}/template/index.html?data=${_data}`,
         {
           waitUntil: 'networkidle0'
         }
@@ -87,19 +81,18 @@ app.get('/banner.png', async (req: Request, res: Response) =>
     })
 );
 
-app.get('/banner.json', async (req: Request, res: Response) => {
+app.get('/banner.json', async (req: Request, res: Response) =>
   generateBanner(req.query.data ? JSON.parse(req.query.data) : {})
-    .then(image =>
+    .then(image => {
       res.send({
-        buffer: image,
-        base64: image.toString('base64')
-      })
-    )
-    .catch(error => res.status(500).send(error));
-});
+        base64: `data:image/png;base64,${image.toString('base64')}`
+      });
+    })
+    .catch(error => res.status(500).send(error))
+);
 
 // OK!
 
 app.listen(PORT, () =>
-  console.log(`[AlmeríaJS - Banners] Escuchando por el puerto ${PORT}`)
+  console.log(`[+] [AlmeríaJS - Banners] Escuchando por el puerto ${PORT}...`)
 );
