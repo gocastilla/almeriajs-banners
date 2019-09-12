@@ -20,15 +20,33 @@ app.use('/', express.static(path.resolve(__dirname, '../form')));
 function renderTemplatoIndex(data: any): Promise<string | unknown> {
   return new Promise((resolve, reject) => {
     const index = path.resolve(__dirname, '../template/index.html');
-    ejs.renderFile(index, data, {}, (error, html) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(html);
+    ejs.renderFile(
+      index,
+      {
+        date: data.date || '',
+        talks: data.talks || []
+      },
+      {},
+      (error, html) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(html);
+        }
       }
-    });
+    );
   });
 }
+
+app.get('/template/index.html', async (req: Request, res: Response) =>
+  renderTemplatoIndex(req.query.data ? JSON.parse(req.query.data) : {})
+    .then(template => {
+      res.send(template);
+    })
+    .catch(error => {
+      res.status(500).send(error);
+    })
+);
 
 app.get('/template/index.html', async (req: Request, res: Response) =>
   renderTemplatoIndex(req.query.data ? JSON.parse(req.query.data) : {})
@@ -47,7 +65,7 @@ app.use('/template', express.static(path.resolve(__dirname, '../template')));
 function generateBanner(data = {}): Promise<Buffer> {
   return new Promise(async (resolve, reject) => {
     try {
-      const browser = await puppeteer.launch();
+      const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
       const page = await browser.newPage();
       await page.setViewport({
         width: 1200,
@@ -58,7 +76,7 @@ function generateBanner(data = {}): Promise<Buffer> {
       await page.goto(
         `http://localhost:${PORT}/template/index.html?data=${_data}`,
         {
-          waitUntil: 'networkidle0'
+          waitUntil: 'networkidle2'
         }
       );
       const screenshot = await page.screenshot({ fullPage: true });
