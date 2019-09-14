@@ -37,6 +37,7 @@ app.post("/banner", (req: Req, res: Res) => {
 
 app.get("/banner", (req: Req, res: Res) => {
   const data = encodeURI(JSON.stringify(req.body || {}));
+  console.log("takeScreenshot()");
   takeScreenshot(`http://localhost:${PORT}/template/index.html?data=${data}`)
     .then(image => res.contentType("image/png").send(image))
     .catch(error => res.status(500).send(error));
